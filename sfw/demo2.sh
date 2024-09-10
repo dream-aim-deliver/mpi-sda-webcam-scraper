@@ -1,0 +1,1 @@
+python url_image_scraper.py --url "https://archive1.roundshot.com/5bc87012a72d81.60422707/2024-09-06/14-00-00/2024-09-06-14-00-00_half.jpg" 
