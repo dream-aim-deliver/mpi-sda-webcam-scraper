@@ -1,5 +1,5 @@
 ```bash
-docker build -t mpi-telegram-scraper .
+docker build -t mpi-webcam-scraper .
 
 
 
