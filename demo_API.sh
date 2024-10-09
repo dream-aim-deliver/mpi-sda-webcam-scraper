@@ -1,0 +1,2 @@
+python webcam_scraper.py --latitude "51.504105" --longitude "-0.074575" --start_date "2024-09-06" --end_date "2024-09-06" --log-level="INFO" \
+ --kp_auth_token test123 --kp_host localhost --kp_port 8000 --kp_scheme http \
