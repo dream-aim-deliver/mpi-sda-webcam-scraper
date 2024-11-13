@@ -1,5 +1,4 @@
 import logging
-import json
 import httpx
 
 from app.sdk.models import KernelPlancksterSourceData
