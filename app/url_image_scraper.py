@@ -1,10 +1,9 @@
-from app.sdk.models import KernelPlancksterSourceData, BaseJobState, JobOutput, ProtocolEnum
-from app.sdk.scraped_data_repository import ScrapedDataRepository,  KernelPlancksterSourceData
+from app.sdk.models import KernelPlancksterSourceData, BaseJobState, JobOutput
+from app.sdk.scraped_data_repository import KernelPlancksterSourceData
 import time
 import numpy as np
 from typing import List
 from PIL import Image
-from collections import Counter
 import logging
 import time
 import cv2
@@ -87,7 +86,7 @@ def scrape_URL(job_id, tracer_id, scraped_data_repository, log_level, latitude, 
                         os.makedirs(os.path.dirname(image_path), exist_ok=True)
                         save_image(image, image_path, factor=1.5 / 255, clip_range=(0, 1))
                         logger.info(f"Scraped Image at {time.time()} and saved to: {image_path}")
-                        relative_path = f"Webcam/{tracer_id}/{job_id}/scraped/{sanitize_filename(data_name)}.png"
+                        relative_path = f"webcam/{tracer_id}/{job_id}/scraped/{sanitize_filename(data_name)}.png"
                         next_capture_time += interval
                         num_screenshots+=1
                         

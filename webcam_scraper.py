@@ -1,5 +1,4 @@
 import logging
-from app.sdk.models import KernelPlancksterSourceData, BaseJobState
 from app.sdk.scraped_data_repository import ScrapedDataRepository
 from app.setup import setup
 from app.url_image_scraper import scrape_URL
@@ -23,31 +22,34 @@ def main(
     log_level: str = "WARNING"
 ) -> None:
 
-    logger = logging.getLogger(__name__)
-    logging.basicConfig(level=log_level)
+    try:
+        logger = logging.getLogger(__name__)
+        logging.basicConfig(level=log_level)
 
-  
-    if not all([job_id, tracer_id, latitude, longitude, date]):
-        logger.error(f"{job_id}: job_id, tracer_id, coordinates, and date range must all be set.") 
-        raise ValueError("job_id, tracer_id, coordinates, and date range must all be set.")
-
-
-    kernel_planckster, protocol, file_repository = setup(
-        job_id=job_id,
-        logger=logger,
-        kp_auth_token=kp_auth_token,
-        kp_host=kp_host,
-        kp_port=kp_port,
-        kp_scheme=kp_scheme,
-    )
-
-    scraped_data_repository = ScrapedDataRepository(
-        protocol=protocol,
-        kernel_planckster=kernel_planckster,
-        file_repository=file_repository,
-    )
+    
+        if not all([job_id, tracer_id, latitude, longitude, date]):
+            logger.error(f"{job_id}: job_id, tracer_id, coordinates, and date range must all be set.") 
+            raise ValueError("job_id, tracer_id, coordinates, and date range must all be set.")
 
 
+        kernel_planckster, protocol, file_repository = setup(
+            job_id=job_id,
+            logger=logger,
+            kp_auth_token=kp_auth_token,
+            kp_host=kp_host,
+            kp_port=kp_port,
+            kp_scheme=kp_scheme,
+        )
+
+        scraped_data_repository = ScrapedDataRepository(
+            protocol=protocol,
+            kernel_planckster=kernel_planckster,
+            file_repository=file_repository,
+        )
+
+    except Exception as e:
+        logger.error(f"Error setting up scraper: {e}")
+        return
 
     scrape_URL(
         job_id=job_id,
