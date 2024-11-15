@@ -17,7 +17,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Function to fetch an image from the stream
-def fetch_image_from_stream(url)->Image:
+def fetch_image_from_stream(url) -> Image.Image | None:
     try:
         cap = cv2.VideoCapture(url)
         if not cap.isOpened():
@@ -49,7 +49,7 @@ def save_image(image, path, factor=1.0, clip_range=(0, 1)):
     Image.fromarray(np_image).save(path)
 
 # Updated scrape_URL function
-def scrape_URL(job_id, tracer_id, scraped_data_repository, log_level, latitude, longitude, date, file_dir, url, interval, duration):
+def scrape_URL(case_study_name, job_id, tracer_id, scraped_data_repository, log_level, latitude, longitude, date, file_dir, url, interval, duration):
     try:
         logger = logging.getLogger(__name__)
         logging.basicConfig(level=log_level)
@@ -86,7 +86,7 @@ def scrape_URL(job_id, tracer_id, scraped_data_repository, log_level, latitude, 
                         os.makedirs(os.path.dirname(image_path), exist_ok=True)
                         save_image(image, image_path, factor=1.5 / 255, clip_range=(0, 1))
                         logger.info(f"Scraped Image at {time.time()} and saved to: {image_path}")
-                        relative_path = f"webcam/{tracer_id}/{job_id}/scraped/{sanitize_filename(data_name)}.png"
+                        relative_path = f"{case_study_name}/{tracer_id}/{job_id}/{sanitize_filename(data_name)}.png"
                         next_capture_time += interval
                         num_screenshots+=1
                         
@@ -135,8 +135,6 @@ def scrape_URL(job_id, tracer_id, scraped_data_repository, log_level, latitude, 
                     source_data_list=[]
                 )
 
-                
-
         if os.path.exists(file_dir):
             try:
                 shutil.rmtree(file_dir)
@@ -151,6 +149,7 @@ def scrape_URL(job_id, tracer_id, scraped_data_repository, log_level, latitude, 
                 tracer_id=tracer_id,
                 source_data_list=output_data_list
             )
+
     except Exception as error:
         logger.error(f"{job_id}: Unable to scrape data. Job with tracer_id {tracer_id} failed. Error:\n{error}")
         job_state = BaseJobState.FAILED
