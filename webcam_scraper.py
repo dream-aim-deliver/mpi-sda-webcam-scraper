@@ -1,6 +1,9 @@
 import logging
+import pprint
+import sys
+from app.sdk.models import KernelPlancksterSourceData
 from app.sdk.scraped_data_repository import ScrapedDataRepository
-from app.setup import setup
+from app.setup import datetime_parser, setup, string_validator
 from app.url_image_scraper import scrape_URL
 
 
@@ -9,13 +12,14 @@ def main(
     case_study_name: str,
     job_id: int,
     tracer_id: str,
-    latitude:str,
-    longitude:str,
-    date:str,
+    latitude: str,
+    longitude: str,
+    date: str,
     file_dir: str,
-    url:str,
-    interval:int,
-    duration:int,
+    url: str,
+    start_date: str,
+    end_date: str,
+    interval: int,
     kp_host: str,
     kp_port: str,
     kp_auth_token: str,
@@ -32,6 +36,27 @@ def main(
             logger.error(f"case_study_name, job_id, tracer_id, coordinates, and date range must all be set.") 
             raise ValueError("case_study_name, job_id, tracer_id, coordinates, and date range must all be set.")
 
+        string_variables = {
+            "case_study_name": case_study_name,
+            "job_id": job_id,
+            "tracer_id": tracer_id,
+            "latitude": latitude,
+            "longitude": longitude
+        }
+
+        logger.info(f"Validating string variables:  {string_variables}")
+
+        for name, value in string_variables.items():
+            string_validator(value, name)
+
+        logger.info(f"String variables validated successfully!")
+
+        logger.info(f"Converting start and end date to datetime objects")
+        start_date_dt = datetime_parser(start_date)
+        end_date_dt = datetime_parser(end_date)
+        logger.info(f"Start and end date converted to datetime objects successfully")
+
+        logger.info(f"Setting up scraper for case study: {case_study_name}")
 
         kernel_planckster, protocol, file_repository = setup(
             job_id=job_id,
@@ -48,9 +73,13 @@ def main(
             file_repository=file_repository,
         )
 
+        logger.info(f"Scraper setup successfully for case study: {case_study_name}")
+
     except Exception as e:
         logger.error(f"Error setting up scraper: {e}")
-        return
+        sys.exit(1)
+
+    logger.info(f"Scraping data for case study: {case_study_name}")
 
     scrape_URL(
         case_study_name=case_study_name,
@@ -60,12 +89,14 @@ def main(
         log_level=log_level,
         latitude=latitude,
         longitude=longitude,  
-        date=date,
+        start_date=start_date_dt,
+        end_date=end_date_dt,
         file_dir=file_dir,
         url=url,
         interval=interval,
-        duration=duration
     )
+
+    logger.info(f"Data scraped successfully for case study: {case_study_name}")
 
 
 
@@ -127,6 +158,27 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
+        "--start_date",
+        type=str,
+        required=True,
+        help="Start datetime in the format 'YYYY-MM-DDTHH:MM",
+    )
+
+    parser.add_argument(
+        "--end_date",
+        type=str,
+        required=True,
+        help="End datetime in the format 'YYYY-MM-DDTHH:MM",
+    )
+    
+    parser.add_argument(
+        "--interval",
+        type=int,
+        default="60",
+        help="Time interval between screenshots",
+    )
+
+    parser.add_argument(
         "--kp_host",
         type=str,
         default="60",
@@ -168,13 +220,6 @@ if __name__ == "__main__":
         help="URL of the camera stream",
     )
     
-    
-    parser.add_argument(
-        "--interval",
-        type=int,
-        default="60",
-        help="Time interval between screenshots",
-    )
 
     parser.add_argument(
         "--duration",
