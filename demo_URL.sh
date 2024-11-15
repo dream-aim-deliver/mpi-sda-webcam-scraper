@@ -2,7 +2,6 @@ python webcam_scraper.py --url "http://131.147.222.67:8089/?action=stream" \
     --start_date "2024-10-15T22:00" \
     --end_date "2024-10-15T23:00" \
     --interval "30" \
-    --duration "120" \
     --latitude "35.652832" \
     --longitude "139.839478" \
     --date "15-10-24" \

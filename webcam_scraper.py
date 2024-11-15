@@ -221,18 +221,9 @@ if __name__ == "__main__":
         required=True,
         help="URL of the camera stream",
     )
-    
-
-    parser.add_argument(
-        "--duration",
-        type=int,
-        default="600",
-        help="total duration to take screenshots",
-    )
 
 
     args = parser.parse_args()
-
 
     main(
         case_study_name=args.case_study_name,
