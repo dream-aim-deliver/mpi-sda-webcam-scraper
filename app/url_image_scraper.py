@@ -77,7 +77,10 @@ def scrape_URL(case_study_name, job_id, tracer_id, scraped_data_repository, log_
                 num_screenshots=0
 
                 while (time.perf_counter() - next_capture_time) < duration:
+
+                    # TODO: needs to be able to take a timestamp parameter and return the image at that timestamp
                     image = fetch_image_from_stream(url)
+
                     if image is None:
                         logger.error("Error: Unable to fetch image.")
                         continue
@@ -114,7 +117,7 @@ def scrape_URL(case_study_name, job_id, tracer_id, scraped_data_repository, log_
                             logger.info(f"Could not register file: {e}")
                         
                         print(f"job_id = {job_id} and tracer_id = {tracer_id}")
-                        response_time = time.time() - start_date
+                        response_time = time.time() - start_date.timestamp()
                         response_data = {
                             "message": f"Pipeline processing completed",
                             "response_time": f"{response_time:.2f} seconds"
