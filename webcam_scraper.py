@@ -6,6 +6,7 @@ from app.url_image_scraper import scrape_URL
 
 
 def main(
+    case_study_name: str,
     job_id: int,
     tracer_id: str,
     latitude:str,
@@ -27,9 +28,9 @@ def main(
         logging.basicConfig(level=log_level)
 
     
-        if not all([job_id, tracer_id, latitude, longitude, date]):
-            logger.error(f"{job_id}: job_id, tracer_id, coordinates, and date range must all be set.") 
-            raise ValueError("job_id, tracer_id, coordinates, and date range must all be set.")
+        if not all([case_study_name, job_id, tracer_id, latitude, longitude, date]):
+            logger.error(f"case_study_name, job_id, tracer_id, coordinates, and date range must all be set.") 
+            raise ValueError("case_study_name, job_id, tracer_id, coordinates, and date range must all be set.")
 
 
         kernel_planckster, protocol, file_repository = setup(
@@ -52,6 +53,7 @@ def main(
         return
 
     scrape_URL(
+        case_study_name=case_study_name,
         job_id=job_id,
         tracer_id=tracer_id,
         scraped_data_repository=scraped_data_repository,
@@ -73,6 +75,12 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Scrape data from Sentinel datacollection.")
 
+    parser.add_argument(
+        "--case-study-name",
+        type=str,
+        default="webcam",
+        help="The name of the case study",
+    )
 
     parser.add_argument(
         "--job-id",
@@ -180,6 +188,7 @@ if __name__ == "__main__":
 
 
     main(
+        case_study_name=args.case_study_name,
         job_id=args.job_id,
         tracer_id=args.tracer_id,
         log_level=args.log_level,
