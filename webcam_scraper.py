@@ -54,6 +54,8 @@ def main(
         logger.info(f"Converting start and end date to datetime objects")
         start_date_dt = datetime_parser(start_date)
         end_date_dt = datetime_parser(end_date)
+        if start_date_dt > end_date_dt:
+            raise ValueError(f"Start date must be before end date. Found: {start_date_dt} > {end_date_dt}.")
         logger.info(f"Start and end date converted to datetime objects successfully")
 
         logger.info(f"Setting up scraper for case study: {case_study_name}")
@@ -244,10 +246,11 @@ if __name__ == "__main__":
         kp_port=args.kp_port,
         kp_auth_token=args.kp_auth_token,
         kp_scheme=args.kp_scheme,
+        start_date=args.start_date,
+        end_date=args.end_date,
         file_dir=args.file_dir,
         url=args.url,
         interval=args.interval,
-        duration=args.duration,
     )
 
 

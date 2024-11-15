@@ -33,7 +33,7 @@ def string_validator(value: str, arg_name: str) -> str:
     return value
 
 def datetime_parser(date_string: str) -> datetime:
-    dt = datetime.strptime(date_string, "%Y-%m-%d %H:%M:%S")
+    dt = datetime.strptime(date_string, "%Y-%m-%dT%H:%M")
     return dt
 
 def _setup_kernel_planckster(
