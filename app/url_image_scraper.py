@@ -1,3 +1,4 @@
+from datetime import datetime
 from app.sdk.models import KernelPlancksterSourceData, BaseJobState, JobOutput
 from app.sdk.scraped_data_repository import KernelPlancksterSourceData
 import time
@@ -18,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 # Function to fetch an image from the stream
 def fetch_image_from_stream(url) -> Image.Image | None:
+    cap = None
     try:
         cap = cv2.VideoCapture(url)
         if not cap.isOpened():
@@ -35,11 +37,8 @@ def fetch_image_from_stream(url) -> Image.Image | None:
         logger.error(f"Error fetching image from stream: {e}")
         return None
     finally:
-        cap.release()
-
-def sanitize_filename(filename):
-    # Replace disallowed characters with underscores
-    return re.sub(r'[^\w./]', '_', filename)
+        if cap is not None: 
+            cap.release()
 
 def save_image(image, path, factor=1.0, clip_range=(0, 1)):
     """Save the image to the given path."""
@@ -49,7 +48,7 @@ def save_image(image, path, factor=1.0, clip_range=(0, 1)):
     Image.fromarray(np_image).save(path)
 
 # Updated scrape_URL function
-def scrape_URL(case_study_name, job_id, tracer_id, scraped_data_repository, log_level, latitude, longitude, date, file_dir, url, interval, duration):
+def scrape_URL(case_study_name, job_id, tracer_id, scraped_data_repository, log_level, latitude, longitude, start_date: datetime, end_date: datetime, file_dir, url, interval):
     try:
         logger = logging.getLogger(__name__)
         logging.basicConfig(level=log_level)
@@ -64,29 +63,38 @@ def scrape_URL(case_study_name, job_id, tracer_id, scraped_data_repository, log_
         if job_state:  # for typing
             logger.info(f"{job_id}: Starting Job")
             job_state = BaseJobState.RUNNING
+
+            duration = (end_date - start_date).total_seconds()
             num_screenshots = duration // interval    
-            start_time = time.time()  # Record start time for response time measurement
+            #start_time = time.time()  # Record start time for response time measurement
             try:
                 logger.info(f"starting with webcam URL")
                 image_dir = os.path.join(file_dir, "images")
                 os.makedirs(image_dir, exist_ok=True)
-                start_time = time.perf_counter()
-                next_capture_time = start_time
+                #start_time = time.perf_counter()
+                next_capture_time = time.perf_counter()
+
                 num_screenshots=0
 
-                while (time.perf_counter() - start_time) < duration:
+                while (time.perf_counter() - next_capture_time) < duration:
                     image = fetch_image_from_stream(url)
                     if image is None:
                         logger.error("Error: Unable to fetch image.")
                         continue
                     if (time.perf_counter() >= next_capture_time) and (np.mean(image) != 0.0) and (num_screenshots!=duration//interval):  
-                        image_filename = f"URLbased_webcam.png"
-                        data_name = f"Webcam_{latitude}_{longitude}_{date}_{time.time()}"
+
+                        # Save the image locally
+                        file_extension = image.format.lower() if image.format else "png"
+                        image_filename = f"URLbased_webcam.{file_extension}"
+                        unix_timestamp = int(time.time())
                         image_path = os.path.join(image_dir, "scraped", image_filename)
                         os.makedirs(os.path.dirname(image_path), exist_ok=True)
                         save_image(image, image_path, factor=1.5 / 255, clip_range=(0, 1))
                         logger.info(f"Scraped Image at {time.time()} and saved to: {image_path}")
-                        relative_path = f"{case_study_name}/{tracer_id}/{job_id}/{sanitize_filename(data_name)}.png"
+
+                        # Register it in Kernel Planckster
+                        data_name = f"webcam_{latitude}_{longitude}"
+                        relative_path = f"{case_study_name}/{tracer_id}/{job_id}/{unix_timestamp}/webcam/{data_name}.{file_extension}"
                         next_capture_time += interval
                         num_screenshots+=1
                         
@@ -103,10 +111,10 @@ def scrape_URL(case_study_name, job_id, tracer_id, scraped_data_repository, log_
                                 local_file_name=image_path,
                             )
                         except Exception as e:
-                            logger.info("Could not register file: ", e)
+                            logger.info(f"Could not register file: {e}")
                         
                         print(f"job_id = {job_id} and tracer_id = {tracer_id}")
-                        response_time = time.time() - start_time
+                        response_time = time.time() - start_date
                         response_data = {
                             "message": f"Pipeline processing completed",
                             "response_time": f"{response_time:.2f} seconds"
@@ -127,7 +135,7 @@ def scrape_URL(case_study_name, job_id, tracer_id, scraped_data_repository, log_
             except Exception as e:
                 logger.error(f"Error in processing pipeline: {e}")
                 job_state = BaseJobState.FAILED
-                f"{job_id}: Unable to scrape data. Error:\n{error}\nJob with tracer_id {tracer_id} failed.\nLast successful data: {last_successful_data}\nCurrent data: \"{current_data}\", job_state: \"{job_state}\""
+                f"{job_id}: Unable to scrape data. Error:\n{e}\nJob with tracer_id {tracer_id} failed.\nLast successful data: {last_successful_data}\nCurrent data: \"{current_data}\", job_state: \"{job_state}\""
                 
                 return JobOutput(
                     job_state=job_state,
