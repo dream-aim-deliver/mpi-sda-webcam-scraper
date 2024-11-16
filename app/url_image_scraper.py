@@ -1,13 +1,14 @@
-from datetime import datetime
+from datetime import datetime,timedelta
 from app.sdk.models import KernelPlancksterSourceData, BaseJobState, JobOutput
 from app.sdk.scraped_data_repository import KernelPlancksterSourceData
 import time
 import numpy as np
 from typing import List
+import requests
 from PIL import Image
+from io import BytesIO
 import logging
 import time
-import cv2
 import os
 import shutil
 from PIL import Image
@@ -17,28 +18,34 @@ import re
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Function to fetch an image from the stream
-def fetch_image_from_stream(url) -> Image.Image | None:
-    cap = None
+
+def fetch_images_from_url(url: str, date: datetime) -> Image.Image:
+    
+    split_url = url.split('/')
+    webcam_id = split_url[3]
+    url_template = "https://storage.roundshot.com/{webcam_id}/{year}-{month}-{day}/{hour}-{minute}-00/{year}-{month}-{day}-{hour}-{minute}-00_half.jpg"
+    
     try:
-        cap = cv2.VideoCapture(url)
-        if not cap.isOpened():
-            logger.error("Error: Unable to open video stream.")
-            return None
-
-        ret, frame = cap.read()
-        if not ret:
-            logger.error("Error: Unable to read frame from video stream.")
-            return None
-
-        img = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-        return img
+        url = url_template.format(
+                webcam_id=webcam_id,
+                year=date.year,
+                month=f"{date.month:02}",
+                day=f"{date.day:02}",
+                hour=f"{date.hour:02}" if date >= datetime.now() else "12",
+                minute=f"{date.minute:02}" if date >= datetime.now() else "00",
+            )
+        logger.info(f"Fetching image from: {url}")
+            
+        # Fetch the image from the URL
+        response = requests.get(url)
+        response.raise_for_status()  # Raise an error for bad responses
+            
+        # Convert the response content to a PIL Image
+        image = Image.open(BytesIO(response.content))
     except Exception as e:
-        logger.error(f"Error fetching image from stream: {e}")
-        return None
-    finally:
-        if cap is not None: 
-            cap.release()
+        logger.error(f"Error fetching image for {date}: {e}")
+        
+    return image
 
 def save_image(image, path, factor=1.0, clip_range=(0, 1)):
     """Save the image to the given path."""
@@ -63,33 +70,26 @@ def scrape_URL(case_study_name, job_id, tracer_id, scraped_data_repository, log_
         if job_state:  # for typing
             logger.info(f"{job_id}: Starting Job")
             job_state = BaseJobState.RUNNING
-
-            duration = (end_date - start_date).total_seconds()
-            num_screenshots = duration // interval    
-            #start_time = time.time()  # Record start time for response time measurement
             try:
                 logger.info(f"starting with webcam URL")
                 image_dir = os.path.join(file_dir, "images")
                 os.makedirs(image_dir, exist_ok=True)
-                #start_time = time.perf_counter()
-                next_capture_time = time.perf_counter()
-
-                num_screenshots=0
-
-                while (time.perf_counter() - next_capture_time) < duration:
-
-                    # TODO: needs to be able to take a timestamp parameter and return the image at that timestamp
-                    image = fetch_image_from_stream(url)
+                current_date = start_date
+                interval = timedelta(minutes=interval) if start_date == datetime.now() else timedelta(days=1)
+                iteration=0
+                logger.info(f"Data scraping Interval set as:{interval}")
+                while (current_date <= end_date):
+                    image = fetch_images_from_url(url=url,date=current_date)
 
                     if image is None:
                         logger.error("Error: Unable to fetch image.")
                         continue
-                    if (time.perf_counter() >= next_capture_time) and (np.mean(image) != 0.0) and (num_screenshots!=duration//interval):  
+                    if (current_date <= end_date) and (np.mean(image) != 0.0):  
 
                         # Save the image locally
                         file_extension = image.format.lower() if image.format else "png"
                         image_filename = f"URLbased_webcam.{file_extension}"
-                        unix_timestamp = int(time.time())  # TODO: Might need compute it from start_date, end_date and interval so this matches across scrapers
+                        unix_timestamp = int(current_date.timestamp()) + iteration   
                         image_path = os.path.join(image_dir, "scraped", image_filename)
                         os.makedirs(os.path.dirname(image_path), exist_ok=True)
                         save_image(image, image_path, factor=1.5 / 255, clip_range=(0, 1))
@@ -100,8 +100,8 @@ def scrape_URL(case_study_name, job_id, tracer_id, scraped_data_repository, log_
 
                         relative_path = f"{case_study_name}/{tracer_id}/{job_id}/{unix_timestamp}/webcam/{data_name}.{file_extension}"
 
-                        next_capture_time += interval
-                        num_screenshots+=1
+                        current_date += interval
+                        iteration += 1
                         
                         media_data = KernelPlancksterSourceData(
                             name=data_name,

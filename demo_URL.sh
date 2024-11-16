@@ -1,6 +1,6 @@
-python webcam_scraper.py --url "http://131.147.222.67:8089/?action=stream" \
-    --start_date "2024-10-15T22:00" \
-    --end_date "2024-10-15T23:00" \
+python webcam_scraper.py --url "https://storage.roundshot.com/54ae54684746d3.82338131/2024-11-17/03-00-00/2024-11-17-03-00-00_half.jpg" \
+    --start_date "2023-10-15T22:00" \
+    --end_date "2023-10-20T23:00" \
     --interval "30" \
     --latitude "35.652832" \
     --longitude "139.839478" \
