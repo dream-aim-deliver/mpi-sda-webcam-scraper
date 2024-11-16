@@ -89,7 +89,7 @@ def scrape_URL(case_study_name, job_id, tracer_id, scraped_data_repository, log_
                         # Save the image locally
                         file_extension = image.format.lower() if image.format else "png"
                         image_filename = f"URLbased_webcam.{file_extension}"
-                        unix_timestamp = int(time.time())
+                        unix_timestamp = int(time.time())  # TODO: Might need compute it from start_date, end_date and interval so this matches across scrapers
                         image_path = os.path.join(image_dir, "scraped", image_filename)
                         os.makedirs(os.path.dirname(image_path), exist_ok=True)
                         save_image(image, image_path, factor=1.5 / 255, clip_range=(0, 1))
@@ -97,7 +97,9 @@ def scrape_URL(case_study_name, job_id, tracer_id, scraped_data_repository, log_
 
                         # Register it in Kernel Planckster
                         data_name = f"webcam_{latitude}_{longitude}"
+
                         relative_path = f"{case_study_name}/{tracer_id}/{job_id}/{unix_timestamp}/webcam/{data_name}.{file_extension}"
+
                         next_capture_time += interval
                         num_screenshots+=1
                         
