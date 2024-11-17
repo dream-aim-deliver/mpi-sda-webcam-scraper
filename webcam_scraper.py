@@ -1,10 +1,9 @@
+from datetime import timedelta
 import logging
-import pprint
 import sys
-from app.sdk.models import KernelPlancksterSourceData
 from app.sdk.scraped_data_repository import ScrapedDataRepository
 from app.setup import datetime_parser, setup, string_validator
-from app.url_image_scraper import scrape_URL
+from app.url_image_scraper import scrape
 
 
 
@@ -15,7 +14,7 @@ def main(
     latitude: str,
     longitude: str,
     file_dir: str,
-    url: str,
+    roundshot_webcam_id: str,
     start_date: str,
     end_date: str,
     interval: int,
@@ -49,12 +48,17 @@ def main(
 
         logger.info(f"String variables validated successfully!")
 
-        logger.info(f"Converting start and end date to datetime objects")
+        logger.info(f"Converting start_date, end_date, and interval to datetime objects")
         start_date_dt = datetime_parser(start_date)
         end_date_dt = datetime_parser(end_date)
         if start_date_dt > end_date_dt:
             raise ValueError(f"Start date must be before end date. Found: {start_date_dt} > {end_date_dt}.")
-        logger.info(f"Start and end date converted to datetime objects successfully")
+
+        if interval <= 0 or not isinstance(interval, int):
+            raise ValueError(f"Interval must be an integer greater than 0, representing an interval in minutes. Found: {interval}")
+        interval_timedelta = timedelta(minutes=interval)
+
+        logger.info(f"start_date, end_date, and interval converted to datetime objects successfully")
 
         logger.info(f"Setting up scraper for case study: {case_study_name}")
 
@@ -81,7 +85,7 @@ def main(
 
     logger.info(f"Scraping data for case study: {case_study_name}")
 
-    scrape_URL(
+    scrape(
         case_study_name=case_study_name,
         job_id=job_id,
         tracer_id=tracer_id,
@@ -92,8 +96,8 @@ def main(
         start_date=start_date_dt,
         end_date=end_date_dt,
         file_dir=file_dir,
-        url=url,
-        interval=interval,
+        roundshot_webcam_id=roundshot_webcam_id,
+        interval=interval_timedelta,
     )
 
     logger.info(f"Data scraped successfully for case study: {case_study_name}")
@@ -206,10 +210,10 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--url",
+        "--roundshot_webcam_id",
         type=str,
         required=True,
-        help="URL of the camera stream",
+        help="Webcam ID for the roundshot webcam to scrape", 
     )
 
 
@@ -229,7 +233,7 @@ if __name__ == "__main__":
         start_date=args.start_date,
         end_date=args.end_date,
         file_dir=args.file_dir,
-        url=args.url,
+        roundshot_webcam_id=args.roundshot_webcam_id,
         interval=args.interval,
     )
 
