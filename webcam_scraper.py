@@ -14,7 +14,6 @@ def main(
     tracer_id: str,
     latitude: str,
     longitude: str,
-    date: str,
     file_dir: str,
     url: str,
     start_date: str,
@@ -32,9 +31,8 @@ def main(
         logging.basicConfig(level=log_level)
 
     
-        if not all([case_study_name, job_id, tracer_id, latitude, longitude, date]):
-            logger.error(f"case_study_name, job_id, tracer_id, coordinates, and date range must all be set.") 
-            raise ValueError("case_study_name, job_id, tracer_id, coordinates, and date range must all be set.")
+        if not all([case_study_name, job_id, tracer_id, latitude, longitude]):
+            raise ValueError(f"case_study_name, job_id, tracer_id, latitude, and longiture must all be set.")
 
         string_variables = {
             "case_study_name": case_study_name,
@@ -47,7 +45,7 @@ def main(
         logger.info(f"Validating string variables:  {string_variables}")
 
         for name, value in string_variables.items():
-            string_validator(value, name)
+            string_validator(f"{value}", name)
 
         logger.info(f"String variables validated successfully!")
 
@@ -117,7 +115,7 @@ if __name__ == "__main__":
 
     parser.add_argument(
         "--job-id",
-        type=str,
+        type=int,
         default="1",
         help="The job id",
     )
@@ -152,14 +150,6 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--date",
-        type=str,
-        default="2023-08-08",
-        required=True,
-        help="start date",
-    )
-
-    parser.add_argument(
         "--start_date",
         type=str,
         required=True,
@@ -177,7 +167,7 @@ if __name__ == "__main__":
         "--interval",
         type=int,
         default="60",
-        help="Time interval between screenshots",
+        help="Time interval between screenshots, in minutes.",
     )
 
     parser.add_argument(
@@ -232,7 +222,6 @@ if __name__ == "__main__":
         log_level=args.log_level,
         latitude=args.latitude,
         longitude=args.longitude,
-        date=args.date,
         kp_host=args.kp_host,
         kp_port=args.kp_port,
         kp_auth_token=args.kp_auth_token,
