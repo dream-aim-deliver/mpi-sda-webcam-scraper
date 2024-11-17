@@ -13,6 +13,8 @@ import os
 import shutil
 from PIL import Image
 import re
+import json
+
 
 # Setup logger
 logging.basicConfig(level=logging.INFO)
@@ -58,6 +60,14 @@ def save_image(image, path, factor=1.0, clip_range=(0, 1)):
     Image.fromarray(np_image).save(path)
 
 
+def save_report(report_dict, file_path):
+    try:
+        with open(file_path, 'w') as json_file:
+            json.dump(report_dict, json_file, indent=4)  # indent for pretty-printing
+        print(f"Report saved to {file_path}")
+    except Exception as e:
+        print(f"Error saving report: {e}")
+
 # Updated scrape_URL function
 def scrape_URL(case_study_name: str, job_id: int, tracer_id: str, scraped_data_repository: ScrapedDataRepository, log_level: str, latitude, longitude, start_date: datetime, end_date: datetime, file_dir: str, url: str, interval: int) -> JobOutput:
 
@@ -81,6 +91,7 @@ def scrape_URL(case_study_name: str, job_id: int, tracer_id: str, scraped_data_r
         image_dir = os.path.join(file_dir, "images")
         os.makedirs(image_dir, exist_ok=True)
         current_date = start_date
+        report_dict = {}
         interval = timedelta(minutes=interval)# if start_date == datetime.now() else timedelta(days=1)
         #iteration=0
         logger.info(f"Data scraping Interval set at: {interval}")
@@ -91,6 +102,7 @@ def scrape_URL(case_study_name: str, job_id: int, tracer_id: str, scraped_data_r
 
                 if image is None:
                     current_date += interval
+                    report_dict[int(current_date.timestamp())] = "No data"
                     continue  # logging is done in fetch_images_from_url
 
                 if (current_date <= end_date) and (np.mean(image) != 0.0):  
@@ -108,7 +120,8 @@ def scrape_URL(case_study_name: str, job_id: int, tracer_id: str, scraped_data_r
                     data_name = f"webcam_{case_study_name}_{tracer_id}"
 
                     relative_path = f"{case_study_name}/{tracer_id}/{job_id}/{unix_timestamp}/webcam/{data_name}.{file_extension}"
-
+                    report_dict[unix_timestamp] = {"relative_path" : relative_path}
+                    logger.info(f"{report_dict}")
                     current_date += interval
                     
                     media_data = KernelPlancksterSourceData(
@@ -153,6 +166,31 @@ def scrape_URL(case_study_name: str, job_id: int, tracer_id: str, scraped_data_r
         )
     
     finally:
+        try:
+            if report_dict:
+                report_path = os.path.join(file_dir, "webcam_report.json")
+                os.makedirs(os.path.dirname(report_path), exist_ok=True)
+                save_report(report_dict, report_path)
+                logger.info(f"Report saved at {time.time()} and saved to: {report_path}")
+                data_name = f"webcam_{case_study_name}_{tracer_id}"
+
+                relative_path = f"{case_study_name}/{tracer_id}/{job_id}/webcam/report/{data_name}.json"
+                
+                media_data = KernelPlancksterSourceData(
+                        name=data_name,
+                        protocol=protocol,
+                        relative_path=relative_path,
+                    )
+                    
+                scraped_data_repository.register_scraped_json(
+                        job_id=job_id,
+                        source_data=media_data,
+                        local_file_name=image_path,
+                    )
+
+                output_data_list.append(media_data)
+        except Exception as error:
+            logger.warning(f"Could not upload webcam-report due to {error}")    
         try:
             if os.path.exists(file_dir):
                 shutil.rmtree(file_dir)
