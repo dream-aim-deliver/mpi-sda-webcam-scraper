@@ -2,7 +2,7 @@ from enum import Enum
 import os
 import re
 from typing import List, TypeVar
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator
 from datetime import datetime
 
 
