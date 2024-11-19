@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 
 def fetch_image_from_roundshot(roundshot_webcam_id: str, date: datetime) -> Image.Image | None:
     
+    
     try:
         url_template = "https://storage.roundshot.com/{webcam_id}/{year}-{month}-{day}/{hour}-{minute}-00/{year}-{month}-{day}-{hour}-{minute}-00_half.jpg"
         
@@ -95,7 +96,17 @@ def scrape(case_study_name: str, job_id: int, tracer_id: str, scraped_data_repos
         current_date = start_date
         report_dict = {}
         logger.info(f"Data scraping Interval set at: {interval}")
-
+        #logger.info(f"timestamp:{current_date.timestamp()}")
+        webcam_list=['5e568898681458.46669392', '5b3c79de7145a4.91097248', '5b3c7b6c59a9d2.69886482', '54ae54684746d3.82338131', '5e56831da4aca5.86170788', 
+                    '56570ff06614d3.12405925', '5bed921d2345c8.82119321', '582431e6e60a55.13915440', '59f9a595f18ee6.56669100', '5b86acc519a864.23015209', 
+                    '5ad845c78363f4.19658084', '5f998930a4d3a7.02030574', '59b6a5447623b9.86399130', '57aae61df3c975.13953398', '543bb0f47b6784.33544709', 
+                    '581c64c16ab941.38509337', '61373586c8a715.78521672', '59f99fbeccafc9.27967305', '56b895c6b08f57.71487130', '5587fc6b6112f0.27710113', 
+                    '53ce6812a43508.11453786', '6442a1cbd218f3.03638602', '5c9b60f03df719.72602116', '53ce5956663437.97348915']
+        if roundshot_webcam_id in webcam_list:
+            logger.info("Webcam configuration confirmed")
+        else:
+            logger.error("Webcam not found ,check the webcam ID and retry")
+            exit(1)
         while (current_date <= end_date):
 
             try:
