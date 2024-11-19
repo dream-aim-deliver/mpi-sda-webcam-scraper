@@ -131,7 +131,7 @@ def scrape(case_study_name: str, job_id: int, tracer_id: str, scraped_data_repos
                     dd_mm_yy = current_date.strftime("%d_%m_%y")
 
                     # Register it in Kernel Planckster
-                    data_name = f"webcam__{latitude}_{longitude}_{dd_mm_yy}_{case_study_name}_{tracer_id}"
+                    data_name = f"webcam__{latitude}_{longitude}_{roundshot_webcam_id}_{dd_mm_yy}_{case_study_name}_{tracer_id}"
 
                     relative_path = f"{case_study_name}/{tracer_id}/{job_id}/{unix_timestamp}/webcam/{data_name}.{file_extension}"
                     
