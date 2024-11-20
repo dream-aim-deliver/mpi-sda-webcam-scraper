@@ -27,7 +27,7 @@ def main(
 
     try:
         logger = logging.getLogger(__name__)
-        logging.basicConfig(level=log_level)
+        logging.basicConfig(level=log_level, format='%(asctime)s - %(levelname)s - %(message)s')
 
     
         if not all([case_study_name, job_id, tracer_id, latitude, longitude]):
