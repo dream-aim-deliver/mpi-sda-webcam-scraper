@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-import pprint
+from pprint import pprint
 from app.sdk.models import KernelPlancksterSourceData, BaseJobState, JobOutput
 from app.sdk.scraped_data_repository import KernelPlancksterSourceData, ScrapedDataRepository
 import time
@@ -15,6 +15,8 @@ import shutil
 from PIL import Image
 import json
 
+from app.utils import URL_TEMPLATE, generate_relative_path, get_webcam_info_from_name, get_webcam_name
+
 
 # Setup logger
 logging.basicConfig(level=logging.INFO)
@@ -24,9 +26,8 @@ logger = logging.getLogger(__name__)
 def fetch_image_from_roundshot(roundshot_webcam_id: str, date: datetime) -> Image.Image | None:
     
     try:
-        url_template = "https://storage.roundshot.com/{webcam_id}/{year}-{month}-{day}/{hour}-{minute}-00/{year}-{month}-{day}-{hour}-{minute}-00_half.jpg"
         
-        url = url_template.format(
+        url = URL_TEMPLATE.format(
                 webcam_id=roundshot_webcam_id,
                 year=date.year,
                 month=f"{date.month:02}",
@@ -120,12 +121,21 @@ def scrape(case_study_name: str, job_id: int, tracer_id: str, scraped_data_repos
                     dd_mm_yy = current_date.strftime("%d_%m_%y")
 
                     # Register it in Kernel Planckster
-                    data_name = f"webcam__{latitude}_{longitude}_{dd_mm_yy}_{case_study_name}_{tracer_id}"
+                    webcam_name = get_webcam_name(roundshot_webcam_id)
 
-                    relative_path = f"{case_study_name}/{tracer_id}/{job_id}/{unix_timestamp}/webcam/{data_name}.{file_extension}"
-                    
+                    relative_path = generate_relative_path(
+                        case_study_name=case_study_name,
+                        tracer_id=tracer_id,
+                        job_id=job_id,
+                        timestamp=unix_timestamp,
+                        dataset=webcam_name,
+                        evalscript_name="webcam",
+                        image_hash="nohash",
+                        file_extension=file_extension
+                    )
+
                     media_data = KernelPlancksterSourceData(
-                        name=data_name,
+                        name=webcam_name,
                         protocol=protocol,
                         relative_path=relative_path,
                     )
@@ -187,12 +197,12 @@ def scrape(case_study_name: str, job_id: int, tracer_id: str, scraped_data_repos
                 save_report(report_dict, report_path)
                 logger.info(f"Report saved at {time.time()} and saved to: {report_path}")
 
-                data_name = f"webcam_report_{case_study_name}_{tracer_id}"
+                webcam_name = f"webcam_report_{case_study_name}_{tracer_id}"
 
-                relative_path = f"{case_study_name}/{tracer_id}/{job_id}/webcam_report/{data_name}.json"
+                relative_path = f"{case_study_name}/{tracer_id}/{job_id}/webcam_report/{webcam_name}.json"
                 
                 media_data = KernelPlancksterSourceData(
-                        name=data_name,
+                        name=webcam_name,
                         protocol=protocol,
                         relative_path=relative_path,
                     )
