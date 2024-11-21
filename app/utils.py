@@ -17,7 +17,7 @@ class KernelPlancksterRelativePath(NamedTuple):
     file_extension: str
 
 def generate_relative_path(case_study_name, tracer_id, job_id, timestamp, dataset, evalscript_name, image_hash, file_extension):
-    return f"{case_study_name}/{tracer_id}/{job_id}/{timestamp}/sentinel/{dataset}_{evalscript_name}_{image_hash}.{file_extension}"
+    return f"{case_study_name}/{tracer_id}/{job_id}/{timestamp}/webcam/{dataset}_{evalscript_name}_{image_hash}.{file_extension}"
 
 def parse_relative_path(relative_path) -> KernelPlancksterRelativePath:
     parts = relative_path.split("/")
